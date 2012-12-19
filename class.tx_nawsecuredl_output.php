@@ -34,6 +34,11 @@
 
 class tx_nawsecuredl_output {
 
+	protected $arrExtConf = array();
+
+	protected $intFileSize;
+
+	protected $intLogId;
 
 	/**
 	 * The init Function, to check the access rights
@@ -41,7 +46,7 @@ class tx_nawsecuredl_output {
 	 * @return void
 	 */
 	function init(){
-		//require_once(PATH_t3lib.'class.t3lib_div.php');
+		$this->arrExtConf = $this->GetExtConf();
 
 		$this->u = intval(t3lib_div::_GP('u'));
 		if (!$this->u){
@@ -53,88 +58,108 @@ class tx_nawsecuredl_output {
 		$this->file = t3lib_div::_GP('file');
 		$key = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'];
 
-		$this->data = $this->u.$this->file.$this->t.$key;
-		$this->checkhash = md5($this->data);
+		$this->data = $this->u.$this->file.$this->t;
+		$this->checkhash = hash_hmac('md5', $this->data, $key);
 
 		// Hook for init:
-		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['init'])) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['init'])) {
 			$_params = array('pObj' => &$this);
-			foreach($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['init'] as $_funcRef)   {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['init'] as $_funcRef)   {
 				t3lib_div::callUserFunction($_funcRef,$_params,$this);
 			}
 		}
 
 		if ($this->checkhash != $this->hash){
+			header('HTTP/1.1 403 Forbidden');
 			exit ('Access denied!');
 		}
 
 		if (intval($this->t) < time()){
+			header('HTTP/1.1 403 Forbidden');
 			exit ('Access denied!');
 		}
 
 		$this->feUserObj = tslib_eidtools::initFeUser();
 		tslib_eidtools::connectDB();
 
-		if ($this->u != '0') {
+		if ($this->u != 0) {
 			$feuser = $this->feUserObj->user['uid'];
 			if ($this->u != $feuser){
-				exit ('Access denied!!');
+				header('HTTP/1.1 403 Forbidden');
+				exit ('Access denied!');
 			}
 		}
 	}
+
 
 	/**
 	 * Output the requested file
 	 *
 	 * @param data $file
 	 */
-	function fileOutput($file){
+	public function fileOutput(){
 
-		$file = PATH_site.'/'.$this->file;
+		$file = t3lib_div::getFileAbsFileName($this->removeLeadingSlash($this->file));
 
 		// Hook for pre-output:
-		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['preOutput'])) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['preOutput'])) {
 			$_params = array('pObj' => &$this);
-			foreach($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['preOutput'] as $_funcRef)   {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['preOutput'] as $_funcRef)   {
 				t3lib_div::callUserFunction($_funcRef,$_params,$this);
 			}
 		}
 
 		if (file_exists($file)){
 
+			$this->intFileSize = filesize($file);
+
+			$this->logDownload(0);
+
 			// files bigger than 32MB are now 'application/octet-stream' by default (getimagesize memory_limit problem)
-			if (filesize($file)<1024*1024*32){
-				$bildinfos=@getimagesize($file);
-				$bildtypnr=$bildinfos[2];
+			if ($this->intFileSize < 1024*1024*32){
+				$bildinfos = @getimagesize($file);
+				$bildtypnr = $bildinfos[2];
 			}
 
-			$contenttype[1]='image/gif';
-			$contenttype[2]='image/jpeg';
-			$contenttype[3]='image/png';
+			$contenttype[1] = 'image/gif';
+			$contenttype[2] = 'image/jpeg';
+			$contenttype[3] = 'image/png';
 
-			$contenttypedatei='';
-			$contenttypedatei=$contenttype[$bildtypnr];
+			$contenttypedatei = '';
+			$contenttypedatei = $contenttype[$bildtypnr];
 
-			if ($contenttypedatei=='') // d.h. wenn noch nicht gesetzt:
+			if ($contenttypedatei == '') // d.h. wenn noch nicht gesetzt:
 			/* try to get the filetype from the fileending */
 			{
 				$endigung=strtolower(strrchr($file,'.'));
 				//alles ab dem letzten Punkt
-				switch(strtolower($endigung)){
 
+				if ($this->arrExtConf['forcedownload'] == 1){
+					$forcetypes = explode("|",$this->arrExtConf['forcedownloadtype']);
+					if (is_array($forcetypes)){
+						if (in_array(substr($endigung, 1),$forcetypes)) {
+							$forcedownload = true;
+						}
+					}
+				}
+
+				switch(strtolower($endigung)){
 
 					case '.pps':
 						$contenttypedatei='application/vnd.ms-powerpoint';
 						break;
-		 		 		##### Microsoft Powerpoint Dateien
+						##### Microsoft Powerpoint Dateien
 					case '.doc':
-		 		 		$contenttypedatei='application/msword';
-		 		 		break;
-		 		 		##### Microsoft Word Dateien
+						$contenttypedatei='application/msword';
+						break;
+						##### Microsoft Word Dateien
 					case '.xls':
-		 		 		$contenttypedatei='application/vnd.ms-excel';
-		 		 		break;
-		 		 		##### Microsoft Excel Dateien
+						$contenttypedatei='application/vnd.ms-excel';
+						break;
+						##### Microsoft Excel Dateien
+
+						//TODO: add MS-Office 2007 XML-filetypes
+
 					case '.jpeg':
 						$contenttypedatei='image/jpeg';
 						break;
@@ -178,10 +203,13 @@ class tx_nawsecuredl_output {
 						$contenttypedatei='video/x-flv';
 						break;
 						### Shockwave / Flash
-					case 'swf':
+					case '.swf':
 						$contenttypedatei='application/x-shockwave-flash';
 						break;
-
+					case '.htm':
+					case '.html':
+						$contenttypedatei = 'text/html';
+						break;
 					default:
 						$contenttypedatei='application/octet-stream';
 						break;
@@ -189,20 +217,54 @@ class tx_nawsecuredl_output {
 			}
 
 			// Hook for output:
-			if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['output'])) {
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['output'])) {
 				$_params = array('pObj' => &$this);
-				foreach($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['output'] as $_funcRef)   {
+				foreach($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['output'] as $_funcRef)   {
 					t3lib_div::callUserFunction($_funcRef,$_params,$this);
 				}
 			}
-				
+
+
 			header("Pragma: private");
 			header("Expires: 0"); // set expiration time
 			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 			header('Content-Type: '.$contenttypedatei);
-			header('Content-Disposition: inline; filename="'.basename($file).'"');
-			readfile($file);
-		}else{
+			header('Content-Length: '.$this->intFileSize);
+
+			if ($forcedownload == true){
+				header('Content-Disposition: attachment; filename="'.basename($file).'"');
+			}else{
+				header('Content-Disposition: inline; filename="'.basename($file).'"');
+			}
+
+			$strOutputFunction = trim($this->arrExtConf['outputFunction']);
+			switch ($strOutputFunction) {
+				case 'readfile_chunked':
+					$this->readfile_chunked($file);
+				break;
+
+				case 'fpassthru':
+					$handle = fopen($file, 'rb');
+					fpassthru($handle);
+					fclose($handle);
+				break;
+
+				case 'readfile':
+					//fallthrough, this is the default case
+				default:
+					readfile($file);
+				break;
+			}
+
+			// make sure we can detect an aborted connection, call flush
+			ob_flush();
+			flush();
+			if (!connection_aborted() AND $strOutputFunction !== 'readfile_chunked') {
+				$this->logDownload();
+			}
+
+
+		} else {
 			print "File does not exists!";
 		}
 	}
@@ -212,26 +274,103 @@ class tx_nawsecuredl_output {
 	 *
 	 * @return void
 	 */
-	function logDownload(){
-		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['naw_securedl']);
-		if (!$extConf['log']){ // no logging
-			return;
+	protected function logDownload($intFileSize = null)
+	{
+		if ($this->isLoggingEnabled()) {
+
+			if (is_null($intFileSize)) {
+				$intFileSize = $this->intFileSize;
+			}
+
+			$data_array = array (
+				'tstamp' => time(),
+				'file_name' => $this->file,
+				'file_size' => $intFileSize,
+				'user_id' => intval($this->feUserObj->user['uid']),
+			);
+
+			if (is_null($this->intLogId)) {
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_nawsecuredl_counter', $data_array);
+				$this->intLogId = intval($GLOBALS['TYPO3_DB']->sql_insert_id());
+			} else {
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_nawsecuredl_counter', '`uid`='.$this->intLogId, $data_array);
+			}
+
+		}
+	}
+
+
+	/**
+	 * Returns the configuration array
+	 *
+	 * @return array
+	 */
+	protected function GetExtConf()
+	{
+		static $arrExtConf=array();
+
+		if (!$arrExtConf) {
+			$arrExtConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['naw_securedl']);
 		}
 
-		$insert_array = array (
-			'tstamp' => time(),
-			'filename' => $this->file,
-			'userid' => intval($this->feUserObj->user['uid']),
-		);
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_nawsecuredl_counter',$insert_array);
+		return $arrExtConf;
+	}
+
+	/**
+	 * In some cases php needs the filesize as php_memory, so big files cannot
+	 * be transferred. This function mitigates this problem.
+	 *
+	 * @param string $filename
+	 * @return bool
+	 */
+	protected function readfile_chunked($filename)
+	{
+		$chunksize = intval($this->arrExtConf['outputChunkSize']); // how many bytes per chunk
+		$timeout = ini_get('max_execution_time');
+		$buffer = '';
+		$bytes_sent = 0;
+		$handle = fopen($filename, 'rb');
+		if ($handle === false) {
+			return false;
+		}
+		while (!feof($handle) && (!connection_aborted()) ) {
+			set_time_limit($timeout);
+			$buffer = fread($handle, $chunksize);
+			print $buffer;
+			$bytes_sent += $chunksize;
+			ob_flush();
+			flush();
+			$this->logDownload(t3lib_div::intInRange($bytes_sent, 0, $this->intFileSize));
+		}
+		return fclose($handle);
+	}
+
+	/**
+	 * Checks if logging has been enabled in configuration
+	 *
+	 * @return bool
+	 */
+	protected function isLoggingEnabled()
+	{
+		return (bool)$this->arrExtConf['log'];
+	}
+
+	/**
+	 * Removes a possible leading slash from a string
+	 *
+	 * @param string
+	 * @return string
+	 */
+	protected function removeLeadingSlash($strValue)
+	{
+		return preg_replace('/^\//', '', $strValue);
 	}
 
 }
 
 $securedl = new tx_nawsecuredl_output();
 $securedl->init();
-$securedl->logDownload();
-$securedl->fileOutput(rawurldecode($securedl->file));
+$securedl->fileOutput();
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/naw_securedl/class.tx_nawsecuredl_output.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']);
