@@ -1,18 +1,16 @@
 # TYPO3 Extension "naw_securedl"
 "Secure Download": Apply TYPO3 access rights to ALL file assets (PDFs, TGZs or JPGs etc. - configurable) - protect them from direct access.
 
-## Version 1.4.1
+## Version 1.4.2
 
 
 
 
 <table>
-	<tr><td>Version</td><td>1.4.1 stable</td></tr>
-	<tr><td>Release date</td><td>30. April 2010</td></tr>
+	<tr><td>Version</td><td>1.4.2 stable</td></tr>
+	<tr><td>Release date</td><td>11. June 2010</td></tr>
 	<tr><td>Author</td><td>Dietrich Heise, Helmut Hummel</td></tr>
-	<tr><td>Comment</td><td>New version depends on TYPO3 4.2 or greater and PHP 5.2
-This version fixes the denpendencies in ex_emconf.php accordingly
-No other functional changes</td></tr>
+	<tr><td>Comment</td><td>Fix urlencode regression bug introduced in 1.4.1 (Thanks to Felix Nagel)</td></tr>
 </table>
 
 ## !! Attention !!
