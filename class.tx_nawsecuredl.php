@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2005-2007 Dietrich Heise (typo3-ext(at)naw.info)
+*  (c) 2005 Dietrich Heise (heise at naw de)
 *  All rights reserved
 *
 *  This script is part of the Typo3 project. The Typo3 project is
@@ -22,7 +22,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 /**
- * @author	Dietrich Heise <typo3-ext(at)naw.info>
+ * @author	Dietrich Heise <heise at naw de>
  */
 class tx_nawsecuredl {
 
@@ -40,12 +40,11 @@ class tx_nawsecuredl {
 	function parseContent($i){
 		$this->extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['naw_securedl']);
 		$rest = $i;
-
+		
 		//while (preg_match('/(<[aA]|<[iI][mM][gG])+?\s[^>]*([hH][rR][eE][fF]|[sS][rR][cC])=(\"??)([^\" >]*?)\\3[^>]*>/siU', $i,$match)) {  // suchendes secured Verzeichnis
-	  	//while (preg_match('/(<[aA]|<[iI][mM][gG])+?.[^>]*([hH][rR][eE][fF]|[sS][rR][cC])=(\"??)([^\" >]*?)\\3[^>]*>/siU', $i,$match)) {  // suchendes secured Verzeichnis
-		while (preg_match('/(?i)(<a|<img)+?.[^>]*(href|src)=(\"??)([^\" >]*?)\\3[^>]*>/siU', $i,$match)) {  // suchendes secured Verzeichnis
+	  	while (preg_match('/(<[aA]|<[iI][mM][gG])+?.[^>]*([hH][rR][eE][fF]|[sS][rR][cC])=(\"??)([^\" >]*?)\\3[^>]*>/siU', $i,$match)) {  // suchendes secured Verzeichnis
 
- 				$cont = explode($match[0],$i,2);
+	  		    $cont = explode($match[0],$i,2);
 	  			$vor = $cont[0];
 	  	   		$tag = $match[0];
 	  	   		$rest = $cont[1];
@@ -74,23 +73,22 @@ class tx_nawsecuredl {
 	 */
 	function makeSecure($element){
 		//header("Content-type: text/css; charset=UTF-8");
-
+		
+		$this->element = $element;
 		$key = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'];
 		if ($GLOBALS['TSFE']->fe_user->user['uid']){
-			$this->feuser = $GLOBALS['TSFE']->fe_user->user['uid'];
+			$this->feuser = $GLOBALS['TSFE']->fe_user->user['username'];
 		}else{
 			$this->feuser = 0;
 		}
 
-		//$securefilename = 'secure.php';
-		$securefilename = 'index.php?eID=tx_nawsecuredl';
+		$securefilename = 'secure.php';
 
-		//$tmp = explode(PATH_site,t3lib_extMgm::extPath('naw_securedl'),2);
-		//$pre_dir = dirname(t3lib_div::getIndpEnv('SCRIPT_NAME'));
-		//$pre_dir = str_replace('\\','/',$pre_dir);
-		//if ($pre_dir != '/') $pre_dir .= '/';
-		//$path_and_file_to_secure = $pre_dir.$tmp[1].$securefilename;
-		$path_and_file_to_secure = $securefilename;
+		$tmp = explode(PATH_site,t3lib_extMgm::extPath('naw_securedl'),2);
+		$pre_dir = dirname(t3lib_div::getIndpEnv('SCRIPT_NAME'));
+		$pre_dir = str_replace('\\','/',$pre_dir);
+		if ($pre_dir != '/') $pre_dir .= '/'; 
+		$path_and_file_to_secure = $pre_dir.$tmp[1].$securefilename;
 
 		$cachetimeadd = $this->extConf['cachetimeadd'];
 
@@ -100,13 +98,12 @@ class tx_nawsecuredl {
 			$timeout =  $GLOBALS['TSFE']->page['cache_timeout'] + time() + $cachetimeadd;
 		}
 
-		$data = $this->feuser.rawurldecode($element).$timeout.$key;
+		$data = $this->feuser.$this->element.$timeout.$key;
 		$hash = md5($data);
 
-		//return $path_and_file_to_secure.'?u='.$this->feuser.'&amp;file='.$element.'&amp;t='.$timeout.'&amp;hash='.$hash;
-		return $path_and_file_to_secure.'&amp;u='.$this->feuser.'&amp;file='.$element.'&amp;t='.$timeout.'&amp;hash='.$hash;
+		return $path_and_file_to_secure.'?u='.$this->feuser.'&amp;file='.$element.'&amp;t='.$timeout.'&amp;hash='.$hash;
 	}
-
+	
 	function modifyfiletypes($string){
 		$chars = preg_split('//',$string);
 		foreach ($chars as $i){
@@ -118,7 +115,7 @@ class tx_nawsecuredl {
 		}
 		return $out;
 	}
-
+	
 	function modifiyregex($string){
 		$string = str_replace('\\','\\\\',$string);
 		$string = str_replace(' ','\ ',$string);
@@ -126,7 +123,7 @@ class tx_nawsecuredl {
 		$string = str_replace('.','\.',$string);
 		return $string;
 	}
-
+	
 }
 
 // Include extension?

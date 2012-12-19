@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2005-2007 Dietrich Heise (typo3-ext(at)naw.info)
+*  (c) 2005 Dietrich Heise (heise at naw de)
 *  All rights reserved
 *
 *  This script is part of the Typo3 project. The Typo3 project is
@@ -22,9 +22,9 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 /**
- * @author	Dietrich Heise <typo3-ext(at)naw.info>
+ * @author	Dietrich Heise <heise at naw de>
  */
-
+ 	
 class ux_SC_tslib_showpic extends SC_tslib_showpic {
 	function printContent()	{
 		include_once('class.tx_nawsecuredl.php');

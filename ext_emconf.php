@@ -12,10 +12,10 @@
 
 $EM_CONF[$_EXTKEY] = array (
 	'title' => 'Secure Downloads',
-	'description' => '"Secure Download": Apply TYPO3 access rights to ALL file assets (PDFs, TGZs or JPGs etc. - configurable) - protect them from direct access.',
+	'description' => 'enables security for directories (e.g. fileadmin and/or typo3temp)',
 	'category' => 'fe',
 	'shy' => 0,
-	'version' => '0.2.5',
+	'version' => '0.1.0',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
@@ -25,11 +25,11 @@ $EM_CONF[$_EXTKEY] = array (
 	'uploadfolder' => 0,
 	'createDirs' => '',
 	'modify_tables' => '',
-	'clearcacheonload' => 0,
+	'clearcacheonload' => 1,
 	'lockType' => '',
 	'author' => 'Dietrich Heise',
-	'author_email' => 'typo3-ext(at)naw.info',
-	'author_company' => '<a href="http://www.naw.info" target="_blank">naw.info</a>',
+	'author_email' => 'heise@naw.de',
+	'author_company' => '<a href="http://www.naw.de" target="_blank">net&works GmbH</a>',
 	'CGLcompliance' => NULL,
 	'CGLcompliance_note' => NULL,
 	'constraints' => 
