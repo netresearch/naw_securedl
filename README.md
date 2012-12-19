@@ -1,19 +1,17 @@
 # TYPO3 Extension "naw_securedl"
 "Secure Download": Apply TYPO3 access rights to ALL file assets (PDFs, TGZs or JPGs etc. - configurable) - protect them from direct access.
 
-## Version 1.5.0
+## Version 1.5.1
 
 
 
 
 <table>
-	<tr><td>Version</td><td>1.5.0 stable</td></tr>
-	<tr><td>Release date</td><td>14. March 2011</td></tr>
+	<tr><td>Version</td><td>1.5.1 stable</td></tr>
+	<tr><td>Release date</td><td>12. October 2011</td></tr>
 	<tr><td>Author</td><td>Dietrich Heise, Helmut Hummel</td></tr>
-	<tr><td>Comment</td><td> Many cleanups
- Minor buxfixes
- Added feature "additional mime types"
- Added feature "nice uris"</td></tr>
+	<tr><td>Comment</td><td> Add support for HTML5 Tag source src"" (Thanks to Achim Schmeer for sponsoring this).
+ Add config option to disable content parsing (Thanks to Benjamin Mack).</td></tr>
 </table>
 
 ## !! Attention !!
