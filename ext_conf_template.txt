@@ -13,3 +13,5 @@ cachetimeadd = 3600
   # cat=basic; type=int[0-3]; label = debug level (output each tag that maches the regex and will be replaced)
 debug = 0
 
+  # cat=basic; type=boolean; label = Log each file access
+log = 0

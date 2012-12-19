@@ -1,26 +1,26 @@
 <?php
 /***************************************************************
-*  Copyright notice
-*
-*  (c) 2005-2007 Dietrich Heise (typo3-ext(at)naw.info)
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+ *  Copyright notice
+ *
+ *  (c) 2005-2007 Dietrich Heise (typo3-ext(at)naw.info)
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * @author	Dietrich Heise <typo3-ext(at)naw.info>
  */
@@ -48,19 +48,27 @@ class tx_nawsecuredl_output {
 			$this->u = 0;
 		}
 
-		$hash = t3lib_div::_GP('hash');
-		$t = t3lib_div::_GP('t');
+		$this->hash = t3lib_div::_GP('hash');
+		$this->t = t3lib_div::_GP('t');
 		$this->file = t3lib_div::_GP('file');
 		$key = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'];
 
-		$data = $this->u.$this->file.$t.$key;
-		$checkhash = md5($data);
+		$this->data = $this->u.$this->file.$this->t.$key;
+		$this->checkhash = md5($this->data);
 
-		if ($checkhash != $hash){
+		// Hook for init:
+		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['init'])) {
+			$_params = array('pObj' => &$this);
+			foreach($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['init'] as $_funcRef)   {
+				t3lib_div::callUserFunction($_funcRef,$_params,$this);
+			}
+		}
+
+		if ($this->checkhash != $this->hash){
 			exit ('Access denied!');
 		}
 
-		if (intval($t) < time()){
+		if (intval($this->t) < time()){
 			exit ('Access denied!');
 		}
 
@@ -84,11 +92,19 @@ class tx_nawsecuredl_output {
 
 		$file = PATH_site.'/'.$this->file;
 
+		// Hook for pre-output:
+		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['preOutput'])) {
+			$_params = array('pObj' => &$this);
+			foreach($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['preOutput'] as $_funcRef)   {
+				t3lib_div::callUserFunction($_funcRef,$_params,$this);
+			}
+		}
+
 		if (file_exists($file)){
 
 			// files bigger than 32MB are now 'application/octet-stream' by default (getimagesize memory_limit problem)
 			if (filesize($file)<1024*1024*32){
-				$bildinfos=getimagesize($file);
+				$bildinfos=@getimagesize($file);
 				$bildtypnr=$bildinfos[2];
 			}
 
@@ -106,10 +122,19 @@ class tx_nawsecuredl_output {
 				//alles ab dem letzten Punkt
 				switch(strtolower($endigung)){
 
+
 					case '.pps':
-						$contenttypedatei='application/mspowerpoint';
+						$contenttypedatei='application/vnd.ms-powerpoint';
 						break;
-						##### Microsoft Powerpoint Dateien
+		 		 		##### Microsoft Powerpoint Dateien
+					case '.doc':
+		 		 		$contenttypedatei='application/msword';
+		 		 		break;
+		 		 		##### Microsoft Word Dateien
+					case '.xls':
+		 		 		$contenttypedatei='application/vnd.ms-excel';
+		 		 		break;
+		 		 		##### Microsoft Excel Dateien
 					case '.jpeg':
 						$contenttypedatei='image/jpeg';
 						break;
@@ -163,6 +188,17 @@ class tx_nawsecuredl_output {
 				}//end of switch Case structure
 			}
 
+			// Hook for output:
+			if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['output'])) {
+				$_params = array('pObj' => &$this);
+				foreach($this->TYPO3_CONF_VARS['SC_OPTIONS']['ext/naw_securedl/class.tx_nawsecuredl_output.php']['output'] as $_funcRef)   {
+					t3lib_div::callUserFunction($_funcRef,$_params,$this);
+				}
+			}
+				
+			header("Pragma: private");
+			header("Expires: 0"); // set expiration time
+			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 			header('Content-Type: '.$contenttypedatei);
 			header('Content-Disposition: inline; filename="'.basename($file).'"');
 			readfile($file);

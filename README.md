@@ -1,16 +1,17 @@
 # TYPO3 Extension "naw_securedl"
 "Secure Download": Apply TYPO3 access rights to ALL file assets (PDFs, TGZs or JPGs etc. - configurable) - protect them from direct access.
 
-## Version 0.1.0
+## Version 0.2.8
 
 
 
 
 <table>
-	<tr><td>Version</td><td>0.1.0 stable</td></tr>
-	<tr><td>Release date</td><td>22. May 2006</td></tr>
+	<tr><td>Version</td><td>0.2.8 stable</td></tr>
+	<tr><td>Release date</td><td>26. September 2008</td></tr>
 	<tr><td>Author</td><td>Dietrich Heise</td></tr>
-	<tr><td>Comment</td><td>First public upload</td></tr>
+	<tr><td>Comment</td><td> changed mime type for .pps-files.
+ added mime type for .doc and .xls files.</td></tr>
 </table>
 
 ## !! Attention !!
