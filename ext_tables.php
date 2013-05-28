@@ -8,8 +8,8 @@ if (TYPO3_MODE == 'BE')	{
 	        'tools', 'txnawsecuredlM1', '',
 	        t3lib_extMgm::extPath($_EXTKEY) . 'modLog/'
 	    );
-	    unset ($_EXTCONF);
     }
+    unset ($_EXTCONF);
 }
 
 ?>
